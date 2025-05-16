@@ -73,11 +73,6 @@ class DQN(nn.Module):
         return x
 
 
-def preprocess_frame(frame):
-    """Convert frame to MLX array and normalize."""
-    return mx.array(frame, dtype=mx.float32) / 255.0
-
-
 def train_agent(
     env_name: str = "ALE/Pacman-v5",
     num_episodes: int = 10000,
@@ -138,16 +133,13 @@ def train_agent(
     num_eval_states = 1000  # You can adjust this number
     eval_states = []
     state, _ = env.reset()
-    state = preprocess_frame(state)
     for _ in range(num_eval_states):
         action = np.random.randint(0, num_actions)
         next_state, _, terminated, truncated, _ = env.step(action)
-        next_state = preprocess_frame(next_state)
         eval_states.append(state)
         state = next_state
         if terminated or truncated:
             state, _ = env.reset()
-            state = preprocess_frame(state)
     eval_states = mx.stack(eval_states)
 
     avg_max_qs = []
@@ -177,7 +169,6 @@ def train_agent(
     for episode in range(num_episodes):
         # Reset environment
         state, _ = env.reset()
-        state = preprocess_frame(state)
 
         episode_reward = 0
 
@@ -192,13 +183,7 @@ def train_agent(
                 # Use model to get action
                 state_batch = mx.expand_dims(state, axis=0)
                 q_values = model(state_batch)
-                try:
-                    action = mx.argmax(q_values, axis=1)[0].item()
-                except Exception as e:
-                    print(e)
-                    import pdb
-
-                    pdb.set_trace()
+                action = mx.argmax(q_values, axis=1)[0].item()
 
             # Decay epsilon
             if frame_count > random_frames:
@@ -207,7 +192,6 @@ def train_agent(
 
             # Take action in environment
             next_state, reward, terminated, truncated, _ = env.step(action)
-            next_state = preprocess_frame(next_state)
             done = terminated or truncated
 
             # Store experience in replay buffer
@@ -230,6 +214,7 @@ def train_agent(
 
                 # Compute target Q values
                 next_q_values = target_model(next_states)
+
                 max_next_q = mx.max(next_q_values, axis=1)
                 targets = rewards + gamma * max_next_q * (1 - dones)
 
@@ -330,7 +315,6 @@ def evaluate(model, env_name, num_episodes=10, render=True):
     rewards = []
     for i in range(num_episodes):
         state, _ = env.reset()
-        state = preprocess_frame(state)
         episode_reward = 0
         done = False
 
@@ -343,7 +327,6 @@ def evaluate(model, env_name, num_episodes=10, render=True):
             # Take action
             next_state, reward, terminated, truncated, _ = env.step(action)
             done = terminated or truncated
-            state = preprocess_frame(next_state)
             episode_reward += reward
 
         rewards.append(episode_reward)
