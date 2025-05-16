@@ -152,7 +152,7 @@ def train_agent(
         loss = compute_loss(states, actions, targets)
         return loss
 
-    grad_fn = mx.grad(loss_and_grad)
+    grad_fn = mx.value_and_grad(loss_and_grad)
 
     # Training loop
     print(f"Starting training for {num_episodes} episodes...")
@@ -171,7 +171,6 @@ def train_agent(
                 # Use model to get action
                 state_batch = mx.expand_dims(state, axis=0)
                 q_values = model(state_batch)
-                mx.eval(q_values)
                 action = mx.argmax(q_values, axis=1)[0].item()
 
             # Decay epsilon
@@ -211,16 +210,13 @@ def train_agent(
                 params = model.trainable_parameters()
 
                 # Compute gradients
-                grads = grad_fn(params, states, actions, targets)
-
-                mx.eval(grads)
+                loss, grads = grad_fn(params, states, actions, targets)
 
                 # Update parameters
                 optimizer.update(model, grads)
 
-                # Trying to fix an Resource limit (499000) exceeded error.
-                # See: https://github.com/ml-explore/mlx-examples/issues/1262
-                mx.eval(params)
+                mx.eval(grads)
+                mx.eval(params, loss)
 
             # Update target network
             if frame_count % target_update_freq == 0:
