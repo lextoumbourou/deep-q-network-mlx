@@ -58,6 +58,7 @@ class DQN(nn.Module):
 
     def __init__(self, num_actions: int):
         super().__init__()
+        self.num_actions = num_actions
         self.conv1 = nn.Conv2d(in_channels=4, out_channels=16, kernel_size=8, stride=4)
         self.conv2 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=4, stride=2)
         self.fc1 = nn.Linear(2592, 256)  # 9x9x32 = 2592
@@ -72,6 +73,14 @@ class DQN(nn.Module):
         x = self.fc2(x)  # → (batch, num_actions)
         return x
 
+def loss_fn(model, states, actions, targets):
+    q_values = model(states)
+
+    # Select the Q-values for the actions taken
+    masks = mx.eye(model.num_actions)[actions]
+    q_action = mx.sum(q_values * masks, axis=1)
+
+    return nn.losses.huber_loss(q_action, targets, reduction="mean")
 
 def train_agent(
     env_name: str = "ALE/Pacman-v5",
@@ -82,7 +91,7 @@ def train_agent(
     epsilon_min: float = 0.1,
     epsilon_decay_frames: int = 1_000_000,
     batch_size: int = 32,
-    replay_buffer_size: int = 10_000,
+    replay_buffer_size: int = 100_000,
     learning_rate: float = 0.00025,
     target_update_freq: int = 10000,
     random_frames: int = 50000,
@@ -108,9 +117,11 @@ def train_agent(
     num_actions = env.action_space.n
 
     model = DQN(num_actions)
+    mx.eval(model.parameters())
 
     target_model = DQN(num_actions)
     target_model.update(model.parameters())
+    mx.eval(target_model.parameters())
 
     optimizer = optim.Adam(learning_rate=learning_rate)
 
@@ -138,21 +149,7 @@ def train_agent(
 
     avg_max_qs = []
 
-    def compute_loss(states, actions, targets):
-        q_values = model(states)
-
-        # Select the Q-values for the actions taken
-        masks = mx.eye(num_actions)[actions]
-        q_action = mx.sum(q_values * masks, axis=1)
-
-        return nn.losses.huber_loss(q_action, targets, reduction="mean")
-
-    def loss_and_grad(model_params, states, actions, targets):
-        model.update(model_params)
-        loss = compute_loss(states, actions, targets)
-        return loss
-
-    grad_fn = mx.value_and_grad(loss_and_grad)
+    loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
 
     # Training loop
     print(f"Starting training for {num_episodes} episodes...")
@@ -206,17 +203,11 @@ def train_agent(
 
                 mx.eval(targets)
 
-                # Get current parameters
-                params = model.trainable_parameters()
+                loss, grads = loss_and_grad_fn(model, states, actions, targets)
 
-                # Compute gradients
-                loss, grads = grad_fn(params, states, actions, targets)
-
-                # Update parameters
                 optimizer.update(model, grads)
 
-                mx.eval(grads)
-                mx.eval(params, loss)
+                mx.eval(model.parameters(), loss)
 
             # Update target network
             if frame_count % target_update_freq == 0:
