@@ -82,7 +82,7 @@ def train_agent(
     epsilon_min: float = 0.1,
     epsilon_decay_frames: int = 1_000_000,
     batch_size: int = 32,
-    replay_buffer_size: int = 100_000,
+    replay_buffer_size: int = 10_000,
     learning_rate: float = 0.00025,
     target_update_freq: int = 10000,
     random_frames: int = 50000,
@@ -105,32 +105,26 @@ def train_agent(
         observation_space=env.observation_space,
     )
 
-    # Get environment details
     num_actions = env.action_space.n
 
-    # Initialize networks
     model = DQN(num_actions)
-    target_model = DQN(num_actions)
-    # Copy weights from model to target_model
-    target_model.update(model.trainable_parameters())
 
-    # Initialize optimizer
+    target_model = DQN(num_actions)
+    target_model.update(model.parameters())
+
     optimizer = optim.Adam(learning_rate=learning_rate)
 
-    # Initialize replay buffer
     replay_buffer = ReplayBuffer(replay_buffer_size)
 
-    # Calculate epsilon decay rate
     epsilon = epsilon_start
     epsilon_interval = epsilon_start - epsilon_min
 
-    # Training metrics
     frame_count = 0
     episode_rewards = []
     running_rewards = []
 
     # Collect a fixed set of states using a random policy before training
-    num_eval_states = 100  # You can adjust this number
+    num_eval_states = 1000
     eval_states = []
     state, _ = env.reset()
     for _ in range(num_eval_states):
@@ -145,14 +139,12 @@ def train_agent(
     avg_max_qs = []
 
     def compute_loss(states, actions, targets):
-        # Forward pass to get Q-values
         q_values = model(states)
 
         # Select the Q-values for the actions taken
         masks = mx.eye(num_actions)[actions]
         q_action = mx.sum(q_values * masks, axis=1)
 
-        # Compute Huber loss
         return nn.losses.huber_loss(q_action, targets, reduction="mean")
 
     def loss_and_grad(model_params, states, actions, targets):
@@ -165,12 +157,10 @@ def train_agent(
     # Training loop
     print(f"Starting training for {num_episodes} episodes...")
     for episode in range(num_episodes):
-        # Reset environment
         state, _ = env.reset()
 
         episode_reward = 0
 
-        # Episode loop
         for step in range(max_steps_per_episode):
             frame_count += 1
 
@@ -193,14 +183,12 @@ def train_agent(
             next_state, reward, terminated, truncated, _ = env.step(action)
             done = terminated or truncated
 
-            # Store experience in replay buffer
             replay_buffer.add(Experience(state, action, reward, next_state, done))
 
             # Update state and accumulate reward
             state = next_state
             episode_reward += reward
 
-            # Train model
             if (
                 frame_count > random_frames
                 and frame_count % train_freq == 0
@@ -217,7 +205,6 @@ def train_agent(
                 max_next_q = mx.max(next_q_values, axis=1)
                 targets = rewards + gamma * max_next_q * (1 - dones)
 
-                # Convert `targets` to concrete array, not a graph node leading back to target_mode.
                 mx.eval(targets)
 
                 # Get current parameters
@@ -238,8 +225,9 @@ def train_agent(
             # Update target network
             if frame_count % target_update_freq == 0:
                 target_model.update(model.trainable_parameters())
+                buffer_size = len(replay_buffer.buffer)
                 print(
-                    f"Episode {episode + 1}/{num_episodes}, Frame {frame_count}, Epsilon {epsilon:.4f}"
+                        f"Episode {episode + 1}/{num_episodes}, Frame {frame_count}, Epsilon {epsilon:.4f}, Buffer size: {buffer_size}"
                 )
 
             if done:
