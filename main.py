@@ -181,6 +181,7 @@ def train_agent(
                 # Use model to get action
                 state_batch = mx.expand_dims(state, axis=0)
                 q_values = model(state_batch)
+                mx.eval(q_values)
                 action = mx.argmax(q_values, axis=1)[0].item()
 
             # Decay epsilon
