@@ -101,7 +101,7 @@ def train_agent(
     # Transform in MLX friendly format.
     env = TransformObservation(
         env=env,
-        func=lambda obs: obs.transpose(1, 2, 0) / 255.0,
+        func=lambda obs: mx.array(obs.transpose(1, 2, 0) / 255.0, dtype=mx.float32),
         observation_space=env.observation_space,
     )
 
@@ -259,6 +259,7 @@ def train_agent(
         q_values = model(eval_states)
         max_q = mx.max(q_values, axis=1)
         avg_max_q = mx.mean(max_q).item()
+        mx.eval(avg_max_q)
         avg_max_qs.append(avg_max_q)
 
         print(
