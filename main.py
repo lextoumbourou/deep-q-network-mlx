@@ -130,7 +130,7 @@ def train_agent(
     running_rewards = []
 
     # Collect a fixed set of states using a random policy before training
-    num_eval_states = 1000  # You can adjust this number
+    num_eval_states = 100  # You can adjust this number
     eval_states = []
     state, _ = env.reset()
     for _ in range(num_eval_states):
@@ -144,7 +144,6 @@ def train_agent(
 
     avg_max_qs = []
 
-    # Define loss function
     def compute_loss(states, actions, targets):
         # Forward pass to get Q-values
         q_values = model(states)
@@ -156,7 +155,6 @@ def train_agent(
         # Compute Huber loss
         return nn.losses.huber_loss(q_action, targets, reduction="mean")
 
-    # Create a function that returns loss and gradients
     def loss_and_grad(model_params, states, actions, targets):
         model.update(model_params)
         loss = compute_loss(states, actions, targets)
@@ -234,7 +232,7 @@ def train_agent(
 
                 # Trying to fix an Resource limit (499000) exceeded error.
                 # See: https://github.com/ml-explore/mlx-examples/issues/1262
-                mx.eval(model.parameters())
+                mx.eval(params)
 
             # Update target network
             if frame_count % target_update_freq == 0:
@@ -265,6 +263,8 @@ def train_agent(
         print(
             f"Episode {episode + 1}/{num_episodes}, Reward: {episode_reward}, Avg Reward: {avg_reward:.2f}, Epsilon: {epsilon:.4f}, Avg Max Q: {avg_max_q:.2f}"
         )
+
+        mx.clear_cache()
 
         # Save model
         if save_path and (episode + 1) % 100 == 0:
