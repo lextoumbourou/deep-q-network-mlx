@@ -4,7 +4,8 @@
 
 import argparse
 from pathlib import Path
-from dqn.train import train_agent, evaluate
+from dqn.train import train_agent
+from dqn.evaluate import record_episode_video, evaluate
 
 
 def main():
@@ -16,8 +17,8 @@ def main():
         "--mode",
         type=str,
         default="train",
-        choices=["train", "eval"],
-        help="Mode: train or eval",
+        choices=["train", "eval", "make_video"],
+        help="Mode: train, eval, or make_video",
     )
     parser.add_argument(
         "--env", type=str, default="ALE/Breakout-v5", help="Atari environment name"
@@ -33,13 +34,19 @@ def main():
         "--load",
         type=str,
         default=None,
-        help="Path to load model weights for evaluation",
+        help="Path to load model weights for evaluation or video generation",
     )
     parser.add_argument(
         "--save",
         type=str,
         default="./weights",
         help="Path to save model weights during training",
+    )
+    parser.add_argument(
+        "--video_episode_num",
+        type=int,
+        default=0,
+        help="Episode number for the output video filename (used in make_video mode)",
     )
 
     args = parser.parse_args()
@@ -64,6 +71,31 @@ def main():
             env_name=args.env,
             num_episodes=args.episodes,
             render=args.render,
+        )
+
+    elif args.mode == "make_video":
+        if not args.load:
+            print(
+                "Must provide model path for video generation using --load <path_to_model.npz>"
+            )
+            return
+
+        cleaned_env_name = args.env.replace("/", "_").replace("-", "_")
+
+        video_dir = Path("videos") / cleaned_env_name
+
+        video_filename = f"episode_{args.video_episode_num}.mp4"
+        output_video_filepath = video_dir / video_filename
+
+        video_dir.mkdir(parents=True, exist_ok=True)
+
+        print(f"Recording video for {args.env} to {output_video_filepath}...")
+
+        record_episode_video(
+            model_path=args.load,
+            env_name=args.env,
+            output_video_filepath=output_video_filepath,
+            video_length=60000,
         )
 
 

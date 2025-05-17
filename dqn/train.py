@@ -3,6 +3,7 @@ import mlx.core as mx
 import mlx.nn as nn
 from mlx import optimizers as optim
 from pathlib import Path
+from gymnasium.wrappers import RecordVideo
 
 from .model import DQN
 from .replay_buffer import ReplayBuffer, Experience
@@ -21,7 +22,7 @@ def loss_fn(model, states, actions, targets):
 
 
 def train_agent(
-    env_name: str = "ALE/Pacman-v5",
+    env_name: str = "ALE/Breakout-v5",
     num_episodes: int = 10000,
     max_steps_per_episode: int = 10000,
     gamma: float = 0.99,
@@ -29,7 +30,7 @@ def train_agent(
     epsilon_min: float = 0.1,
     epsilon_decay_frames: int = 1_000_000,
     batch_size: int = 32,
-    replay_buffer_size: int = 100_000,
+    replay_buffer_size: int = 1_000_000,
     learning_rate: float = 0.00025,
     target_update_freq: int = 10000,
     random_frames: int = 50000,
@@ -39,8 +40,7 @@ def train_agent(
 ):
     """Train a DQN agent on an Atari environment."""
 
-    render_mode = "human" if render else None
-    env = create_env(env_name, render_mode=render_mode)
+    env = create_env(env_name)
 
     num_actions = env.action_space.n
 
@@ -85,7 +85,7 @@ def train_agent(
         state, _ = env.reset()
         episode_reward = 0
 
-        for step in range(max_steps_per_episode):
+        for _ in range(max_steps_per_episode):
             frame_count += 1
 
             if frame_count < random_frames or np.random.rand() < epsilon:
@@ -178,51 +178,3 @@ def train_agent(
 
     env.close()
     return model, episode_rewards, running_rewards, avg_max_qs
-
-
-def evaluate(
-    model_path: str, env_name: str, num_episodes: int, render: bool = True
-):
-    """Evaluate a trained model."""
-    render_mode = "human" if render else None
-
-    # Create env to get num_actions. This is a bit inefficient if model is already loaded
-    # but needed if we don't store num_actions with the model.
-    # A temporary env is created to infer num_actions
-    temp_env = create_env(env_name, render_mode=None)
-    num_actions = temp_env.action_space.n
-    temp_env.close()
-
-    model = DQN(num_actions)
-    model = load_model(model, model_path)
-    mx.eval(model.parameters())  # Ensure model is ready
-
-    # Create the actual environment for evaluation
-    env = create_env(env_name, render_mode=render_mode)
-
-    rewards = []
-    for i in range(num_episodes):
-        state, _ = env.reset()
-        episode_reward = 0
-        done = False
-
-        while not done:
-            # Select action
-            # The state from create_env is already MLX array and preprocessed
-            state_batch = mx.expand_dims(state, axis=0)
-            q_values = model(state_batch)
-            action = mx.argmax(q_values, axis=1)[0].item()
-
-            # Take action
-            next_state, reward, terminated, truncated, _ = env.step(action)
-            done = terminated or truncated
-            episode_reward += reward
-            state = next_state  # Update state
-
-        rewards.append(episode_reward)
-        print(f"Episode {i + 1}, Reward: {episode_reward}")
-
-    env.close()
-    avg_reward = np.mean(rewards)  # Requires numpy as np
-    print(f"Average Reward over {num_episodes} episodes: {avg_reward:.2f}")
-    return rewards
