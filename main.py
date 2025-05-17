@@ -179,6 +179,7 @@ def train_agent(
             next_state, reward, terminated, truncated, _ = env.step(action)
             done = terminated or truncated
 
+            mx.eval(state, action, reward, next_state)
             replay_buffer.add(Experience(state, action, reward, next_state, done))
 
             # Update state and accumulate reward
@@ -205,11 +206,12 @@ def train_agent(
 
                 optimizer.update(model, grads)
 
-                mx.eval(model.parameters(), loss)
+                mx.eval(model.parameters(), loss, optimizer.state)
 
             # Update target network
             if frame_count % target_update_freq == 0:
-                target_model.update(model.trainable_parameters())
+                target_model.update(model.parameters())
+                mx.eval(target_model.parameters())
                 buffer_size = len(replay_buffer.buffer)
                 print(
                         f"Episode {episode + 1}/{num_episodes}, Frame {frame_count}, Epsilon {epsilon:.4f}, Buffer size: {buffer_size}"
@@ -336,7 +338,7 @@ def main():
         "--load", type=str, default=None, help="Path to load model weights"
     )
     parser.add_argument(
-        "--save", type=str, default="./models", help="Path to save model weights"
+        "--save", type=str, default="./weights", help="Path to save model weights"
     )
 
     args = parser.parse_args()
