@@ -197,12 +197,10 @@ def train_agent(
 
                 # Compute target Q values
                 next_q_values = target_model(next_states)
-
                 max_next_q = mx.max(next_q_values, axis=1)
                 targets = rewards + gamma * max_next_q * (1 - dones)
 
-                mx.eval(targets)
-
+                mx.eval(states, actions, targets)
                 loss, grads = loss_and_grad_fn(model, states, actions, targets)
 
                 optimizer.update(model, grads)
