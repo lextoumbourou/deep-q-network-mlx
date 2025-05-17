@@ -1,17 +1,34 @@
 from pathlib import Path
-import mlx.nn as nn # For type hinting model argument, can be removed if not strict
+import json
+import mlx.nn as nn
+import mlx.core as mx
+from .model import DQN
 
-def save_model(model: nn.Module, path: str):
-    """Save model weights to a file."""
+
+def save_model(model: nn.Module, path: str, env_name: str, num_actions: int):
+    """Save model weights and environment name to a file."""
     path_obj = Path(path)
     path_obj.parent.mkdir(parents=True, exist_ok=True)
+
     model.save_weights(str(path_obj))
-    print(f"Model saved to {path_obj}")
+
+    # Save metadata as JSON
+    with open(path_obj.with_suffix(".json"), "w") as f:
+        json.dump({"env_name": env_name, "num_actions": num_actions}, f)
 
 
-def load_model(model: nn.Module, path: str):
-    """Load model weights from a file."""
+def load_model(path: str):
+    """Load model weights and environment name from a file."""
     path_obj = Path(path)
+    if not path_obj.is_file():
+        raise FileNotFoundError(f"Model file not found: {path_obj}")
+
+    metadata_path = path_obj.with_suffix(".json")
+    with open(metadata_path, "r") as f:
+        data = json.load(f)
+
+    model = DQN(data["num_actions"])
     model.load_weights(str(path_obj))
-    print(f"Model loaded from {path_obj}")
-    return model 
+
+    print(f"Model loaded from {path_obj}, Environment: {data['env_name']}")
+    return model, data["env_name"], data["num_actions"]

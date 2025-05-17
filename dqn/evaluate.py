@@ -1,6 +1,7 @@
 import numpy as np
 import mlx.core as mx
 from pathlib import Path
+import mlx.nn as nn
 from gymnasium.wrappers import RecordVideo
 
 from .model import DQN
@@ -20,7 +21,7 @@ def evaluate(model_path: str, env_name: str, num_episodes: int, render: bool = T
     temp_env.close()
 
     model = DQN(num_actions)
-    model = load_model(model, model_path)
+    model, env_name, num_actions = load_model(model_path)
     mx.eval(model.parameters())
 
     # Create the actual environment for evaluation
@@ -71,7 +72,7 @@ def record_episode_video(
     temp_env.close()
 
     model = DQN(num_actions)
-    model = load_model(model, model_path)
+    model, env_name, num_actions = load_model(model_path)
     mx.eval(model.parameters())
 
     env_for_recording = create_env(env_name, render_mode="rgb_array")

@@ -3,12 +3,11 @@ import mlx.core as mx
 import mlx.nn as nn
 from mlx import optimizers as optim
 from pathlib import Path
-from gymnasium.wrappers import RecordVideo
 
 from .model import DQN
 from .replay_buffer import ReplayBuffer, Experience
 from .env import create_env
-from .utils import save_model, load_model
+from .utils import save_model
 
 
 def loss_fn(model, states, actions, targets):
@@ -22,7 +21,8 @@ def loss_fn(model, states, actions, targets):
 
 
 def train_agent(
-    env_name: str = "ALE/Breakout-v5",
+    env_name: str,
+    save_path: Path,
     num_episodes: int = 10000,
     max_steps_per_episode: int = 10000,
     gamma: float = 0.99,
@@ -35,14 +35,12 @@ def train_agent(
     target_update_freq: int = 10000,
     random_frames: int = 50000,
     train_freq: int = 4,
-    render: bool = False,
-    save_path: Path = None,
 ):
     """Train a DQN agent on an Atari environment."""
 
     env = create_env(env_name)
 
-    num_actions = env.action_space.n
+    num_actions = int(env.action_space.n)
 
     model = DQN(num_actions)
     mx.eval(model.parameters())
@@ -60,7 +58,6 @@ def train_agent(
 
     frame_count = 0
     episode_rewards = []
-    running_rewards = []
 
     # Collect a fixed set of states using a random policy before training
     num_eval_states = 1000
@@ -144,7 +141,6 @@ def train_agent(
             if len(episode_rewards) > 100
             else np.mean(episode_rewards)
         )
-        running_rewards.append(avg_reward)
 
         q_values = model(eval_states)
         max_q = mx.max(q_values, axis=1)
@@ -156,25 +152,12 @@ def train_agent(
             f"Episode {episode + 1}/{num_episodes}, Reward: {episode_reward}, Avg Reward: {avg_reward:.2f}, Epsilon: {epsilon:.4f}, Avg Max Q: {avg_max_q:.2f}"
         )
 
-        mx.clear_cache()
-
         if save_path and (episode + 1) % 100 == 0:
-            # Use save_model from .utils
-            save_model(model, f"{save_path}/dqn_episode_{episode + 1}.npz")
-            print("========================================================")
-            print(
-                f"Metal active memory: {mx.metal.get_active_memory() / 1024**3:.2f} GB"
+            save_model(
+                model,
+                save_path / env_name / f"episode_{episode + 1}.safetensors",
+                env_name=env_name,
+                num_actions=num_actions,
             )
-            print(f"Metal cache memory: {mx.metal.get_cache_memory() / 1024**3:.2f} GB")
-            print(f"Metal peak memory: {mx.metal.get_peak_memory() / 1024**3:.2f} GB")
-            print("========================================================")
-            print()
-
-        if avg_reward >= 40.0:
-            print(f"Environment solved after {episode + 1} episodes!")
-            if save_path:
-                save_model(model, f"{save_path}/dqn_solved.npz")
-            break
 
     env.close()
-    return model, episode_rewards, running_rewards, avg_max_qs

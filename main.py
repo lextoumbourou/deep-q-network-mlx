@@ -26,7 +26,7 @@ def main():
     parser.add_argument(
         "--episodes",
         type=int,
-        default=10,
+        default=10000,
         help="Number of episodes for training or evaluation",
     )
     parser.add_argument("--render", action="store_true", help="Render environment")
@@ -54,9 +54,8 @@ def main():
     if args.mode == "train":
         train_agent(
             env_name=args.env,
-            num_episodes=args.episodes,
-            render=args.render,
-            save_path=Path(args.save) if args.save else None,
+            save_path=Path(args.save),
+            num_episodes=args.episodes
         )
 
     elif args.mode == "eval":
