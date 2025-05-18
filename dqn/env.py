@@ -16,8 +16,8 @@ def create_env(
     """
     Creates and preprocesses an Atari environment and transforms to MLX friendly format.
     """
-    env = gym.make(env_name, frameskip=frameskip, render_mode=render_mode)
-    env = AtariPreprocessing(env)
+    env = gym.make(env_name, frameskip=1, render_mode=render_mode)
+    env = AtariPreprocessing(env, frame_skip=frameskip)
     env = FrameStackObservation(env, stack_size=stack_size)
 
     # Transform in MLX friendly format.
