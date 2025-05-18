@@ -11,13 +11,19 @@ from dqn.model import DQN
 from dqn.utils import load_model
 
 
-def evaluate(model_path: str, env_name: str, num_episodes: int, render: bool = True):
-    """Evaluate a trained model."""
+def evaluate(model_path: str, env_name: str, eval_steps: int, render: bool = True):
+    """Evaluate a trained model for a specified number of steps.
+
+    Args:
+        model_path: Path to the saved model weights
+        env_name: Name of the Atari environment
+        eval_steps: Number of steps to evaluate for
+        render: Whether to render the environment
+
+    """
     render_mode = "human" if render else None
 
-    # Create env to get num_actions. This is a bit inefficient if model is already
-    # loaded but needed if we don't store num_actions with the model.
-    # A temporary env is created to infer num_actions
+    # Create env to get num_actions
     temp_env = create_env(env_name, render_mode=None)
     num_actions = temp_env.action_space.n
     temp_env.close()
@@ -29,34 +35,45 @@ def evaluate(model_path: str, env_name: str, num_episodes: int, render: bool = T
     # Create the actual environment for evaluation
     env = create_env(env_name, render_mode=render_mode)
 
-    rewards = []
-    for i in range(num_episodes):
-        state, _ = env.reset()
-        episode_reward = 0
-        done = False
+    total_reward = 0
+    episode_rewards = []
+    current_episode_reward = 0
+    episodes_completed = 0
 
-        while not done:
-            # Select action
-            # The state from create_env is already MLX array and preprocessed
-            state_batch = mx.expand_dims(state, axis=0)
-            q_values = model(state_batch)
-            action = mx.argmax(q_values, axis=1)[0].item()
+    state, _ = env.reset()
 
-            # Take action
-            next_state, reward, terminated, truncated, _ = env.step(action)
-            done = terminated or truncated
-            episode_reward += reward
+    for _ in range(eval_steps):
+        # Select action
+        state_batch = mx.expand_dims(state, axis=0)
+        q_values = model(state_batch)
+        action = mx.argmax(q_values, axis=1)[0].item()
 
-            # Update state
+        # Take action
+        next_state, reward, terminated, truncated, _ = env.step(action)
+        done = terminated or truncated
+
+        current_episode_reward += reward
+        total_reward += reward
+
+        if done:
+            episodes_completed += 1
+            episode_rewards.append(current_episode_reward)
+            print(f"Episode {episodes_completed}, Reward: {current_episode_reward}")
+            current_episode_reward = 0
+            state, _ = env.reset()
+        else:
             state = next_state
 
-        rewards.append(episode_reward)
-        print(f"Episode {i + 1}, Reward: {episode_reward}")
-
     env.close()
-    avg_reward = np.mean(rewards)  # Requires numpy as np
-    print(f"Average Reward over {num_episodes} episodes: {avg_reward:.2f}")
-    return rewards
+
+    if episode_rewards:
+        avg_episode_reward = np.mean(episode_rewards)
+        print(f"\nEvaluation Results over {eval_steps} steps:")
+        print(f"Episodes Completed: {episodes_completed}")
+        print(f"Average Episode Reward: {avg_episode_reward:.2f}")
+        print(f"Total Reward: {total_reward:.2f}")
+
+    return episode_rewards
 
 
 def record_episode_video(
@@ -96,7 +113,7 @@ def record_episode_video(
     print(f"Starting video recording for one episode of {env_name}...")
     state, _ = env.reset()
     done = False
-    episode_reward = 0.
+    episode_reward = 0.0
 
     while not done:
         state_batch = mx.expand_dims(state, axis=0)

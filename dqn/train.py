@@ -35,7 +35,7 @@ def train_agent(
     gamma: float = 0.99,
     epsilon_start: float = 1.0,
     epsilon_min: float = 0.1,
-    epsilon_decay_frames: int = 1_000_000,
+    epsilon_decay_steps: int = 1_000_000,
     batch_size: int = 32,
     replay_buffer_size: int = 100_000,
     learning_rate: float = 5e-4,
@@ -105,7 +105,7 @@ def train_agent(
             q_values = model(state_batch)
             action = int(mx.argmax(q_values, axis=1)[0].item())  # type: ignore
 
-        epsilon -= epsilon_interval / epsilon_decay_frames
+        epsilon -= epsilon_interval / epsilon_decay_steps
         epsilon = max(epsilon, epsilon_min)
 
         next_state, reward, terminated, truncated, _ = env.step(action)

@@ -1,7 +1,7 @@
 """Module for plotting training metrics."""
 
-from pathlib import Path
 import json
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,13 +18,13 @@ def save_metrics(avg_rewards: list, avg_max_qs: list, save_dir: Path, env_name: 
     save_dir.mkdir(parents=True, exist_ok=True)
     metrics_file = save_dir / "training_metrics.json"
 
-    with open(metrics_file, "w") as f:
+    with Path(metrics_file).open("w") as f:
         json.dump(metrics, f)
 
 
 def load_metrics(metrics_file: Path) -> tuple[list, list, str]:
     """Load training metrics from a JSON file."""
-    with open(metrics_file, "r") as f:
+    with Path(metrics_file).open() as f:
         metrics = json.load(f)
     return metrics["avg_rewards"], metrics["avg_max_qs"], metrics["env_name"]
 

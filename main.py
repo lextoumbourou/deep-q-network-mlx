@@ -48,6 +48,12 @@ def main():
     )
     parser.add_argument("--render", action="store_true", help="Render environment")
     parser.add_argument(
+        "--eval-steps",
+        type=int,
+        default=10_000,
+        help="Number of steps to evaluate for",
+    )
+    parser.add_argument(
         "--load-path",
         type=str,
         default=None,
@@ -85,7 +91,7 @@ def main():
         evaluate(
             model_path=args.load_path,
             env_name=args.env,
-            num_episodes=args.episodes,
+            eval_steps=args.eval_steps,
             render=args.render,
         )
 
