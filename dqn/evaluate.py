@@ -6,9 +6,9 @@ import mlx.core as mx
 import numpy as np
 from gymnasium.wrappers import RecordVideo
 
-from .env import create_env
-from .model import DQN
-from .utils import load_model
+from dqn.atari_env import create_env
+from dqn.model import DQN
+from dqn.utils import load_model
 
 
 def evaluate(model_path: str, env_name: str, num_episodes: int, render: bool = True):
@@ -23,7 +23,7 @@ def evaluate(model_path: str, env_name: str, num_episodes: int, render: bool = T
     temp_env.close()
 
     model = DQN(num_actions)
-    model, env_name, num_actions = load_model(model_path)
+    model, env_name, num_actions = load_model(Path(model_path))
     mx.eval(model.parameters())
 
     # Create the actual environment for evaluation
@@ -73,7 +73,7 @@ def record_episode_video(
     temp_env.close()
 
     model = DQN(num_actions)
-    model, env_name, num_actions = load_model(model_path)
+    model, env_name, num_actions = load_model(Path(model_path))
     mx.eval(model.parameters())
 
     env_for_recording = create_env(env_name, render_mode="rgb_array")
@@ -96,7 +96,7 @@ def record_episode_video(
     print(f"Starting video recording for one episode of {env_name}...")
     state, _ = env.reset()
     done = False
-    episode_reward = 0
+    episode_reward = 0.
 
     while not done:
         state_batch = mx.expand_dims(state, axis=0)
@@ -105,7 +105,7 @@ def record_episode_video(
 
         next_state, reward, terminated, truncated, _ = env.step(action)
         done = terminated or truncated
-        episode_reward += reward
+        episode_reward += float(reward)
         state = next_state
 
     env.close()

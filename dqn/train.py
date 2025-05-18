@@ -8,11 +8,11 @@ import mlx.optimizers as optim
 import numpy as np
 from tqdm import tqdm
 
-from .env import create_env
-from .model import DQN
-from .plotting import plot_training_results
-from .replay_buffer import Experience, ReplayBuffer
-from .utils import save_model
+from dqn.atari_env import create_env
+from dqn.model import DQN
+from dqn.plotting import plot_training_results
+from dqn.replay_buffer import Experience, ReplayBuffer
+from dqn.utils import save_model
 
 
 def loss_fn(model, states, actions, targets):
@@ -44,7 +44,7 @@ def train_agent(
     """Train a DQN agent on an Atari environment."""
     env = create_env(env_name, frameskip=frameskip)
 
-    num_actions = int(env.action_space.n)
+    num_actions: int = int(env.action_space.n)  # type: ignore
 
     model = DQN(num_actions)
     mx.eval(model.parameters())
@@ -67,23 +67,23 @@ def train_agent(
 
     # Collect a fixed set of states using a random policy before training
     num_eval_states = 1000
-    eval_states = []
+    eval_states_l = []
     state, _ = env.reset()
     for _ in range(num_eval_states):
-        action = np.random.randint(0, num_actions)
-        next_state, _, terminated, truncated, _ = env.step(action)
-        eval_states.append(state)
+        _action = np.random.randint(0, num_actions)
+        next_state, _, terminated, truncated, _ = env.step(_action)
+        eval_states_l.append(state)
         state = next_state
         if terminated or truncated:
             state, _ = env.reset()
-    eval_states = mx.stack(eval_states)
+    eval_states = mx.stack(eval_states_l)
 
     loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
 
     print(f"Starting training for {train_steps:,} timesteps...")
 
     state, _ = env.reset()
-    episode_reward = 0
+    episode_reward = 0.0
     epoch = 0
     avg_max_q = 0.0
     avg_reward = 0.0
@@ -97,12 +97,13 @@ def train_agent(
     while frame_count < train_steps:
         frame_count += 1
 
+        action: int
         if np.random.rand() < epsilon:
-            action = np.random.randint(0, num_actions)
+            action = int(np.random.randint(0, num_actions))
         else:
             state_batch = mx.expand_dims(state, axis=0)
             q_values = model(state_batch)
-            action = mx.argmax(q_values, axis=1)[0].item()
+            action = int(mx.argmax(q_values, axis=1)[0].item())  # type: ignore
 
         epsilon -= epsilon_interval / epsilon_decay_frames
         epsilon = max(epsilon, epsilon_min)
@@ -114,7 +115,7 @@ def train_agent(
         replay_buffer.add(Experience(state, action, reward, next_state, done))
 
         state = next_state
-        episode_reward += reward
+        episode_reward += float(reward)
 
         if len(replay_buffer) > batch_size:
             states, actions, rewards_batch, next_states_batch, dones_batch = (
@@ -140,7 +141,7 @@ def train_agent(
         if done:
             episode_rewards.append(episode_reward)
 
-            avg_reward = (
+            avg_reward = float(
                 np.mean(episode_rewards[-100:])
                 if len(episode_rewards) > 100
                 else np.mean(episode_rewards)
@@ -148,7 +149,7 @@ def train_agent(
 
             q_values = model(eval_states)
             max_q = mx.max(q_values, axis=1)
-            avg_max_q = mx.mean(max_q).item()
+            avg_max_q = mx.mean(max_q).item()  # type: ignore
             mx.eval(avg_max_q)
 
             current_episode += 1

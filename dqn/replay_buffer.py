@@ -2,6 +2,7 @@
 
 import random
 from collections import deque, namedtuple
+from typing import Deque, Tuple
 
 import mlx.core as mx
 
@@ -16,7 +17,7 @@ class ReplayBuffer:
 
     def __init__(self, capacity: int):
         """Initialize the replay buffer with a given capacity."""
-        self.buffer: deque[Experience] = deque(maxlen=capacity)
+        self.buffer: Deque[Experience] = deque(maxlen=capacity)
 
     def add(self, experience: Experience):
         """Add a new experience to the buffer."""
@@ -24,7 +25,7 @@ class ReplayBuffer:
 
     def sample(
         self, batch_size: int
-    ) -> tuple[mx.array, mx.array, mx.array, mx.array, mx.array]:
+    ) -> Tuple[mx.array, mx.array, mx.array, mx.array, mx.array]:
         """Sample a batch of experiences from the buffer."""
         batch = random.sample(self.buffer, batch_size)
         states = mx.stack([exp.state for exp in batch])

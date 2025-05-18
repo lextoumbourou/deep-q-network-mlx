@@ -8,7 +8,7 @@ import mlx.nn as nn
 from .model import DQN
 
 
-def save_model(model: nn.Module, path: str, env_name: str, num_actions: int):
+def save_model(model: nn.Module, path: Path, env_name: str, num_actions: int):
     """Save model weights and environment name to a file."""
     path_obj = Path(path)
     path_obj.parent.mkdir(parents=True, exist_ok=True)
@@ -20,7 +20,7 @@ def save_model(model: nn.Module, path: str, env_name: str, num_actions: int):
         json.dump({"env_name": env_name, "num_actions": num_actions}, f)
 
 
-def load_model(path: str):
+def load_model(path: Path):
     """Load model weights and environment name from a file."""
     path_obj = Path(path)
     if not path_obj.is_file():

@@ -14,6 +14,7 @@ dependencies = [
     "pydantic>=2.11.4",
     "pytest>=8.3.5",
     "tqdm>=4.67.1",
+    "types-tqdm>=4.67.0.20250516",
 ]
 
 [project.optional-dependencies]
@@ -44,3 +45,8 @@ ignore = ["D203", "D212", "D213", "D401", "D415"]
 quote-style = "double"
 indent-style = "space"
 line-ending = "auto"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.15.0",
+]
