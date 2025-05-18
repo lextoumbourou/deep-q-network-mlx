@@ -8,12 +8,11 @@ The project uses [uv](https://github.com/astral-sh/uv) for dependancy management
 
 ## Training
 
-In the paper, they train a model to play seven ATARI games: "Beam Rider, Breakout, Enduro, Pong, Q*bert, Seaquest, Space Invaders". So far I'm trained:
+In the paper, they train a model to play seven ATARI games: "Beam Rider, Breakout, Enduro, Pong, Q*bert, Seaquest, Space Invaders". I'm currently training Breakout.
 
-* Breakout
-* Beam Rider
+I will train the models on my MacBook Pro M3 Max with 48GB of unified memory.
 
-I trained this models on my MacBook Pro M3 Max with 48GB of unified memory. In the paper they use a replay buffer size of 1M, but I could only manage 100k without running out of memory.
+One note: I've mostly tried to use the parameters exactly as per the paper, how they use a replay buffer size of 1M, but I could only manage 100k without running out of memory.
 
 ### Breakout
 
