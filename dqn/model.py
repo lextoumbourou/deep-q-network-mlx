@@ -1,20 +1,22 @@
-import mlx.core as mx
+"""Defines the DQN model architecture."""
+
 import mlx.nn as nn
 
 
 class DQN(nn.Module):
     """
-    Deep Q-Network as described in the DQN paper:
+    Deep Q-Network as described in the DQN paper.
 
-    The input to the neural network consists of an 84 x 84 x 4 image produce by θ.
-    The first hidden layer convolves 16 8 x 8 filters with stride 4 with the input image and applies a rectifier nonlinearity.
-    The second hidden layer convolves 32 4 x 4 filters with stride 2, again followed by a rectifier nonlinearity.
-    The final hidden layer is fully connected and comprises 256 rectifier units.
-    The output layer is a fully connected linear layer with a single output for each valid action.
-    The number of valid actions varied between 4 and 18 in the games we considered.
+    The input to the neural network consists of an 84x84x4 image.
+    The first hidden layer convolves 16 8x8 filters with stride 4 and applies ReLU.
+    The second hidden layer convolves 32 4x4 filters with stride 2, also with ReLU.
+    The final hidden layer is fully connected with 256 ReLU units.
+    The output layer is a fully connected linear layer with one output per action.
+    The number of valid actions typically varied between 4 and 18.
     """
 
     def __init__(self, num_actions: int):
+        """Initialize the DQN model layers."""
         super().__init__()
         self.num_actions = num_actions
         self.conv1 = nn.Conv2d(in_channels=4, out_channels=16, kernel_size=8, stride=4)
@@ -23,6 +25,7 @@ class DQN(nn.Module):
         self.fc2 = nn.Linear(256, num_actions)
 
     def __call__(self, x):
+        """Forward pass through the network."""
         x = nn.relu(self.conv1(x))  # (batch, 84, 84, 4) → (batch, 20, 20, 16)
         x = nn.relu(self.conv2(x))  # → (batch, 9, 9, 32)
         batch_size = x.shape[0]

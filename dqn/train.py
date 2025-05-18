@@ -1,17 +1,22 @@
-import numpy as np
+"""Module for training the DQN agent."""
+
+from pathlib import Path
+
 import mlx.core as mx
 import mlx.nn as nn
-from mlx import optimizers as optim
-from pathlib import Path
+import mlx.optimizers as optim
+import numpy as np
 from tqdm import tqdm
 
-from .model import DQN
-from .replay_buffer import ReplayBuffer, Experience
 from .env import create_env
+from .model import DQN
+from .plotting import plot_training_results
+from .replay_buffer import Experience, ReplayBuffer
 from .utils import save_model
 
 
 def loss_fn(model, states, actions, targets):
+    """Compute the Q-learning loss."""
     q_values = model(states)
 
     # Select the Q-values for the actions taken
@@ -24,7 +29,7 @@ def loss_fn(model, states, actions, targets):
 def train_agent(
     env_name: str,
     save_path: Path,
-    total_steps: int,
+    train_steps: int,
     steps_per_epoch: int,
     frameskip: int,
     gamma: float = 0.99,
@@ -32,12 +37,11 @@ def train_agent(
     epsilon_min: float = 0.1,
     epsilon_decay_frames: int = 1_000_000,
     batch_size: int = 32,
-    replay_buffer_size: int = 100_000,
+    replay_buffer_size: int = 500_000,
     learning_rate: float = 5e-4,
     target_update_freq: int = 10000,
 ):
     """Train a DQN agent on an Atari environment."""
-
     env = create_env(env_name, frameskip=frameskip)
 
     num_actions = int(env.action_space.n)
@@ -76,7 +80,7 @@ def train_agent(
 
     loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
 
-    print(f"Starting training for {total_steps:,} timesteps...")
+    print(f"Starting training for {train_steps:,} timesteps...")
 
     state, _ = env.reset()
     episode_reward = 0
@@ -84,10 +88,13 @@ def train_agent(
     avg_max_q = 0.0
     avg_reward = 0.0
 
-    pbar = tqdm(total=total_steps, desc="Training")
+    epoch_avg_rewards = []
+    epoch_avg_max_qs = []
+
+    pbar = tqdm(total=train_steps, desc="Training")
     last_frame_count = 0
 
-    while frame_count < total_steps:
+    while frame_count < train_steps:
         frame_count += 1
 
         if np.random.rand() < epsilon:
@@ -150,7 +157,9 @@ def train_agent(
             episode_reward = 0
 
         if frame_count % steps_per_epoch == 0:
-            print(f"Epoch {epoch + 1}/{total_steps // steps_per_epoch} completed")
+            print(f"Epoch {epoch + 1}/{train_steps // steps_per_epoch} completed")
+            epoch_avg_rewards.append(avg_reward)
+            epoch_avg_max_qs.append(avg_max_q)
             if save_path:
                 save_model(
                     model,
@@ -177,3 +186,11 @@ def train_agent(
 
     pbar.close()
     env.close()
+
+    if save_path:
+        plot_training_results(
+            epoch_avg_rewards,
+            epoch_avg_max_qs,
+            save_path / env_name,
+            env_name,
+        )

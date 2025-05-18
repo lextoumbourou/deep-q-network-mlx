@@ -1,11 +1,17 @@
 #!/usr/bin/env python
-# Deep Q-Network Implementation using MLX.
-# Based on the architecture described in "Playing Atari with Deep Reinforcement Learning" by Mnih et al.
+
+"""
+Deep Q-Network Implementation using MLX.
+
+Based on the architecture described in "Playing Atari with Deep Reinforcement Learning"
+by Mnih et al.
+"""
 
 import argparse
 from pathlib import Path
+
+from dqn.evaluate import evaluate, record_episode_video
 from dqn.train import train_agent
-from dqn.evaluate import record_episode_video, evaluate
 
 
 def main():
@@ -22,7 +28,7 @@ def main():
         "--env", type=str, default="ALE/Breakout-v5", help="Atari environment name"
     )
     parser.add_argument(
-        "--total-steps",
+        "--train-steps",
         type=int,
         default=10_000_000,
         help="Total number of steps to train for",
@@ -59,16 +65,14 @@ def main():
         train_agent(
             env_name=args.env,
             save_path=Path(args.save_path),
-            total_steps=args.total_steps,
+            train_steps=args.train_steps,
             steps_per_epoch=args.steps_per_epoch,
             frameskip=args.frameskip,
         )
 
     elif args.mode == "eval":
         if not args.load_path:
-            print(
-                "Must provide model path for evaluation using --load-path <path_to_model.npz>"
-            )
+            print("Must provide model path for evaluation")
             return
 
         evaluate(
@@ -80,9 +84,7 @@ def main():
 
     elif args.mode == "make_video":
         if not args.load_path:
-            print(
-                "Must provide model path for video generation using --load-path <path_to_model.npz>"
-            )
+            print("Must provide model path for video generation")
             return
 
         cleaned_env_name = args.env.replace("/", "_").replace("-", "_")

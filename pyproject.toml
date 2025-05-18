@@ -1,7 +1,7 @@
 [project]
 name = "deep-q-network-mlx"
 version = "0.1.0"
-description = "Add your description here"
+description = "Implementation of Deep Q-Network using MLX"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -11,7 +11,12 @@ dependencies = [
     "mlx>=0.25.1",
     "numpy>=2.2.5",
     "pydantic>=2.11.4",
-    "pytest>=8.3.5",
+    "pytest>=8.3.5"
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff",
 ]
 
 [build-system]
@@ -25,3 +30,15 @@ packages = ["deepq"]
 pythonpath = [
     "."
 ]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "ARG", "PTH", "N", "D"]
+ignore = ["D203", "D212", "D213", "D401", "D415"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"

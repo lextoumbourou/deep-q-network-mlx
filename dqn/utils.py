@@ -1,7 +1,10 @@
-from pathlib import Path
+"""Utility functions for the DQN agent, including model saving and loading."""
+
 import json
+from pathlib import Path
+
 import mlx.nn as nn
-import mlx.core as mx
+
 from .model import DQN
 
 
@@ -13,7 +16,7 @@ def save_model(model: nn.Module, path: str, env_name: str, num_actions: int):
     model.save_weights(str(path_obj))
 
     # Save metadata as JSON
-    with open(path_obj.with_suffix(".json"), "w") as f:
+    with Path(path_obj.with_suffix(".json")).open("w") as f:
         json.dump({"env_name": env_name, "num_actions": num_actions}, f)
 
 
@@ -24,7 +27,7 @@ def load_model(path: str):
         raise FileNotFoundError(f"Model file not found: {path_obj}")
 
     metadata_path = path_obj.with_suffix(".json")
-    with open(metadata_path, "r") as f:
+    with Path(metadata_path).open() as f:
         data = json.load(f)
 
     model = DQN(data["num_actions"])

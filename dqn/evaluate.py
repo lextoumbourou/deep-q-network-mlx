@@ -1,11 +1,13 @@
-import numpy as np
-import mlx.core as mx
+"""Module for evaluating a trained DQN agent."""
+
 from pathlib import Path
-import mlx.nn as nn
+
+import mlx.core as mx
+import numpy as np
 from gymnasium.wrappers import RecordVideo
 
-from .model import DQN
 from .env import create_env
+from .model import DQN
 from .utils import load_model
 
 
@@ -13,8 +15,8 @@ def evaluate(model_path: str, env_name: str, num_episodes: int, render: bool = T
     """Evaluate a trained model."""
     render_mode = "human" if render else None
 
-    # Create env to get num_actions. This is a bit inefficient if model is already loaded
-    # but needed if we don't store num_actions with the model.
+    # Create env to get num_actions. This is a bit inefficient if model is already
+    # loaded but needed if we don't store num_actions with the model.
     # A temporary env is created to infer num_actions
     temp_env = create_env(env_name, render_mode=None)
     num_actions = temp_env.action_space.n
@@ -64,7 +66,6 @@ def record_episode_video(
     video_length: int = 60000,
 ):
     """Load a trained model, run one episode, and save a video."""
-
     # Create environment to infer num_actions
     # This temporary env doesn't need special render mode
     temp_env = create_env(env_name, render_mode=None)

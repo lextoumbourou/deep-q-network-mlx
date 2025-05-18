@@ -13,12 +13,12 @@ In the paper, they train a model to play seven ATARI games: "Beam Rider, Breakou
 * Breakout
 * Beam Rider
 
-I trained this models on my MacBook Pro M3 Max with 48GB of unified memory. In the paper they use a replay buffer size of 1M, but I could only manage 100k before running out of memory.
+I trained this models on my MacBook Pro M3 Max with 48GB of unified memory. In the paper they use a replay buffer size of 1M, but I could only manage 500k before running out of memory.
 
 ### Breakout
 
 ```
-uv run main.py --mode train --env BreakoutNoFrameskip-v4 
+uv run main.py --mode train --env ALE/Breakout-v5
 ```
 
 ### Beam Rider
@@ -26,3 +26,22 @@ uv run main.py --mode train --env BreakoutNoFrameskip-v4
 ## Eval
 
 To do.
+
+## Linting and Formatting
+
+This project uses [ruff](https://github.com/astral-sh/ruff) for linting and formatting.
+
+To check for linting errors:
+
+```bash
+uv run ruff check .
+```
+
+To automatically fix linting errors and format the code:
+
+```bash
+uv run ruff format .
+uv run ruff check . --fix
+```
+
+You can also configure your editor to use ruff for linting and formatting on save.
