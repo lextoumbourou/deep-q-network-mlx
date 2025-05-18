@@ -42,7 +42,7 @@ def train_agent(
     target_update_freq: int = 10000,
 ):
     """Train a DQN agent on an Atari environment."""
-    env = create_env(env_name, frameskip=frameskip)
+    env = create_env(env_name)
 
     num_actions: int = int(env.action_space.n)  # type: ignore
 
@@ -117,7 +117,7 @@ def train_agent(
         state = next_state
         episode_reward += float(reward)
 
-        if len(replay_buffer) > batch_size:
+        if frame_count % frameskip == 0 and len(replay_buffer) > batch_size:
             states, actions, rewards_batch, next_states_batch, dones_batch = (
                 replay_buffer.sample(batch_size)
             )

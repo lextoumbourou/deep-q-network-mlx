@@ -19,10 +19,8 @@ One note: I've mostly tried to use the parameters exactly as per the paper, how 
 ### Breakout
 
 ```
-uv run main.py --mode train --env ALE/Breakout-v5
+uv run main.py --mode train --env BreakoutNoFrameskip-v4
 ```
-
-
 
 ### Beam Rider
 

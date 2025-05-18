@@ -15,12 +15,11 @@ gym.register_envs(ale_py)
 def create_env(
     env_name: str,
     render_mode: str | None = None,
-    frameskip: int = 1,
     stack_size: int = 4,
 ):
     """Creates and preprocesses an Atari environment."""
     output = gym.make(env_name, frameskip=1, render_mode=render_mode)
-    output = AtariPreprocessing(output, frame_skip=frameskip)
+    output = AtariPreprocessing(output)
     output = FrameStackObservation(output, stack_size=stack_size)
 
     # Transform in MLX friendly format.
