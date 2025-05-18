@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from dqn.atari_env import create_env
 from dqn.model import DQN
-from dqn.plotting import plot_training_results
+from dqn.plotting import plot_training_results, save_metrics
 from dqn.replay_buffer import Experience, ReplayBuffer
 from dqn.utils import save_model
 
@@ -37,7 +37,7 @@ def train_agent(
     epsilon_min: float = 0.1,
     epsilon_decay_frames: int = 1_000_000,
     batch_size: int = 32,
-    replay_buffer_size: int = 500_000,
+    replay_buffer_size: int = 100_000,
     learning_rate: float = 5e-4,
     target_update_freq: int = 10000,
 ):
@@ -158,7 +158,6 @@ def train_agent(
             episode_reward = 0
 
         if frame_count % steps_per_epoch == 0:
-            print(f"Epoch {epoch + 1}/{train_steps // steps_per_epoch} completed")
             epoch_avg_rewards.append(avg_reward)
             epoch_avg_max_qs.append(avg_max_q)
             if save_path:
@@ -167,6 +166,12 @@ def train_agent(
                     save_path / env_name / f"epoch_{epoch + 1}.safetensors",
                     env_name=env_name,
                     num_actions=num_actions,
+                )
+                save_metrics(
+                    epoch_avg_rewards,
+                    epoch_avg_max_qs,
+                    save_path / env_name,
+                    env_name,
                 )
 
             epoch += 1

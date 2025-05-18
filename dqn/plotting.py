@@ -1,28 +1,43 @@
 """Module for plotting training metrics."""
 
 from pathlib import Path
+import json
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_training_results(
-    avg_rewards: list, avg_max_qs: list, save_dir: Path, env_name: str
-):
-    """
-    Plots the average reward per episode and average max Q-value per epoch.
+def save_metrics(avg_rewards: list, avg_max_qs: list, save_dir: Path, env_name: str):
+    """Save training metrics to a JSON file."""
+    metrics = {
+        "avg_rewards": avg_rewards,
+        "avg_max_qs": avg_max_qs,
+        "env_name": env_name,
+    }
 
-    Saves the plots to the specified directory.
-    """
-    if not avg_rewards and not avg_max_qs:
-        print("No data to plot.")
+    save_dir.mkdir(parents=True, exist_ok=True)
+    metrics_file = save_dir / "training_metrics.json"
+
+    with open(metrics_file, "w") as f:
+        json.dump(metrics, f)
+
+
+def load_metrics(metrics_file: Path) -> tuple[list, list, str]:
+    """Load training metrics from a JSON file."""
+    with open(metrics_file, "r") as f:
+        metrics = json.load(f)
+    return metrics["avg_rewards"], metrics["avg_max_qs"], metrics["env_name"]
+
+
+def plot_rewards(avg_rewards: list, save_dir: Path, env_name: str):
+    """Plot average rewards per episode."""
+    if not avg_rewards:
+        print("No reward data to plot.")
         return
 
     epochs = np.arange(1, len(avg_rewards) + 1)
 
-    plt.figure(figsize=(12, 5))
-
-    plt.subplot(1, 2, 1)
+    plt.figure(figsize=(10, 6))
     plt.plot(epochs, avg_rewards, label="Average Reward per Episode")
     plt.xlabel("Training Epochs")
     plt.ylabel("Average Reward per Episode")
@@ -30,7 +45,26 @@ def plot_training_results(
     plt.legend()
     plt.grid(True)
 
-    plt.subplot(1, 2, 2)
+    save_dir.mkdir(parents=True, exist_ok=True)
+    save_filepath = save_dir / "rewards_plot.png"
+
+    try:
+        plt.savefig(save_filepath)
+        print(f"Rewards plot saved to {save_filepath}")
+    except Exception as e:
+        print(f"Error saving rewards plot: {e}")
+    plt.close()
+
+
+def plot_q_values(avg_max_qs: list, save_dir: Path, env_name: str):
+    """Plot average max Q-values per epoch."""
+    if not avg_max_qs:
+        print("No Q-value data to plot.")
+        return
+
+    epochs = np.arange(1, len(avg_max_qs) + 1)
+
+    plt.figure(figsize=(10, 6))
     plt.plot(epochs, avg_max_qs, label="Average Max Q-value")
     plt.xlabel("Training Epochs")
     plt.ylabel("Average Action Value (Q)")
@@ -38,15 +72,20 @@ def plot_training_results(
     plt.legend()
     plt.grid(True)
 
-    plt.tight_layout()
-
-    plot_filename = "training_performance_plots.png"
     save_dir.mkdir(parents=True, exist_ok=True)
-    save_filepath = save_dir / plot_filename
+    save_filepath = save_dir / "q_values_plot.png"
 
     try:
         plt.savefig(save_filepath)
-        print(f"Training plots saved to {save_filepath}")
+        print(f"Q-values plot saved to {save_filepath}")
     except Exception as e:
-        print(f"Error saving plots: {e}")
+        print(f"Error saving Q-values plot: {e}")
     plt.close()
+
+
+def plot_training_results(
+    avg_rewards: list, avg_max_qs: list, save_dir: Path, env_name: str
+):
+    """Plot both rewards and Q-values as separate plots."""
+    plot_rewards(avg_rewards, save_dir, env_name)
+    plot_q_values(avg_max_qs, save_dir, env_name)

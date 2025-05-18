@@ -13,7 +13,7 @@ In the paper, they train a model to play seven ATARI games: "Beam Rider, Breakou
 * Breakout
 * Beam Rider
 
-I trained this models on my MacBook Pro M3 Max with 48GB of unified memory. In the paper they use a replay buffer size of 1M, but I could only manage 500k before running out of memory.
+I trained this models on my MacBook Pro M3 Max with 48GB of unified memory. In the paper they use a replay buffer size of 1M, but I could only manage 100k without running out of memory.
 
 ### Breakout
 

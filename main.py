@@ -11,6 +11,7 @@ import argparse
 from pathlib import Path
 
 from dqn.evaluate import evaluate, record_episode_video
+from dqn.plotting import load_metrics, plot_training_results
 from dqn.train import train_agent
 
 
@@ -21,8 +22,8 @@ def main():
         "--mode",
         type=str,
         default="train",
-        choices=["train", "eval", "make_video"],
-        help="Mode: train, eval, or make_video",
+        choices=["train", "eval", "make_video", "plot_metrics"],
+        help="Mode: train, eval, make_video, or plot_metrics",
     )
     parser.add_argument(
         "--env", type=str, default="ALE/Breakout-v5", help="Atari environment name"
@@ -57,6 +58,12 @@ def main():
         type=str,
         default="./weights",
         help="Path to save model weights during training",
+    )
+    parser.add_argument(
+        "--metrics-file",
+        type=str,
+        default=None,
+        help="Path to metrics file for plotting",
     )
 
     args = parser.parse_args()
@@ -106,6 +113,24 @@ def main():
             env_name=args.env,
             output_video_filepath=output_video_filepath,
             video_length=60000,
+        )
+
+    elif args.mode == "plot_metrics":
+        if not args.metrics_file:
+            print("Must provide metrics file path for plotting")
+            return
+
+        metrics_path = Path(args.metrics_file)
+        if not metrics_path.exists():
+            print(f"Metrics file not found: {metrics_path}")
+            return
+
+        avg_rewards, avg_max_qs, env_name = load_metrics(metrics_path)
+        plot_training_results(
+            avg_rewards,
+            avg_max_qs,
+            metrics_path.parent,
+            env_name,
         )
 
 
