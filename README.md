@@ -22,13 +22,14 @@ One note: I've mostly tried to use the parameters exactly as per the paper, how 
 uv run main.py --mode train --env BreakoutNoFrameskip-v4
 ```
 
-![Rewards Plot](weights/BreakoutNoFrameskip-v4/rewards_plot.png)
-![Q Values Plot](weights/BreakoutNoFrameskip-v4/q_values_plot.png)
+<p align="center">
+  <img src="weights/BreakoutNoFrameskip-v4/rewards_plot.png" alt="Rewards Plot" width="400">
+  <img src="weights/BreakoutNoFrameskip-v4/q_values_plot.png"  alt="Q Values Plot" width="400">
+</p>
 
 The best performing evaluation gets a reward of 240, which aligns with the results in the paper. You can see from watching the video, that it figures out a "tunneling strategy", aside from that, it actually seems quite bad at Breakout.
 
-<video src="./videos/BreakoutNoFrameskip_v4/epoch_200.mp4" controls preload></video>
-
+https://github.com/user-attachments/assets/8f9418af-d715-410c-8054-a1e30ae49dda
 
 ## Eval
 
