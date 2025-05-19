@@ -26,7 +26,7 @@ def main():
         help="Mode: train, eval, make_video, or plot_metrics",
     )
     parser.add_argument(
-        "--env", type=str, default="ALE/Breakout-v5", help="Atari environment name"
+        "--env", type=str, help="Atari environment name"
     )
     parser.add_argument(
         "--train-steps",

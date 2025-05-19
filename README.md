@@ -10,9 +10,9 @@ The project uses [uv](https://github.com/astral-sh/uv) for dependancy management
 
 ## Training
 
-In the paper, they train a model to play seven ATARI games: "Beam Rider, Breakout, Enduro, Pong, Q*bert, Seaquest, Space Invaders". I'm currently training Breakout.
+In the paper, they train a model to play seven ATARI games: "Beam Rider, Breakout, Enduro, Pong, Q*bert, Seaquest, Space Invaders".
 
-I will train the models on my MacBook Pro M3 Max with 48GB of unified memory.
+I'm trained Breakout on my laptop, a MacBook Pro M3 Max with 48GB of unified memory, which took about 4.5 hours.
 
 One note: I've mostly tried to use the parameters exactly as per the paper, how they use a replay buffer size of 1M, but I could only manage 100k without running out of memory.
 
@@ -22,11 +22,21 @@ One note: I've mostly tried to use the parameters exactly as per the paper, how 
 uv run main.py --mode train --env BreakoutNoFrameskip-v4
 ```
 
-### Beam Rider
+![Rewards Plot](weights/BreakoutNoFrameskip-v4/rewards_plot.png)
+![Q Values Plot](weights/BreakoutNoFrameskip-v4/q_values_plot.png)
+
+The best performing evaluation gets a reward of 240, which aligns with the results in the paper. You can see from watching the video, that it figures out a "tunneling strategy", aside from that, it actually seems quite bad at Breakout.
+
+<video src="./videos/BreakoutNoFrameskip_v4/epoch_200.mp4" controls preload></video>
+
 
 ## Eval
 
-To do.
+```
+uv run main.py --mode eval --env BreakoutNoFrameskip-v4
+```
+
+
 
 ## Linting and Formatting
 
