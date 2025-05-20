@@ -38,7 +38,7 @@ def train_agent(
     epsilon_decay_steps: int = 1_000_000,
     batch_size: int = 32,
     replay_buffer_size: int = 100_000,
-    learning_rate: float = 5e-4,
+    learning_rate: float = 5e-5,
     target_update_freq: int = 10000,
 ):
     """Train a DQN agent on an Atari environment."""

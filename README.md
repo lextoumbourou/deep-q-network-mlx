@@ -16,9 +16,18 @@ I'm trained Breakout on my laptop, a MacBook Pro M3 Max with 48GB of unified mem
 
 One note: I've mostly tried to use the parameters exactly as per the paper, how they use a replay buffer size of 1M, but I could only manage 100k without running out of memory.
 
+## Beam Rider
+
+```bash
+uv run main.py --mode train --env BeamRiderNoFrameskip-v4
+```
+
+Looking at the loss curve, it seems to have stopped learning. I'll try a lower learning rate. 
+
+
 ### Breakout
 
-```
+```bash
 uv run main.py --mode train --env BreakoutNoFrameskip-v4
 ```
 
