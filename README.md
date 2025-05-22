@@ -22,7 +22,8 @@ One note: I've mostly tried to use the parameters exactly as per the paper, how 
 uv run main.py --mode train --env BeamRiderNoFrameskip-v4
 ```
 
-Looking at the loss curve, it seems to have stopped learning. I'll try a lower learning rate. 
+Looking at the loss curve, it seems to have stopped learning. I'll try a lower learning rate.
+Much better after doing that, but still 4x off the paper's score. Try remove frameskip.
 
 
 ### Breakout

@@ -16,10 +16,11 @@ def create_env(
     env_name: str,
     render_mode: str | None = None,
     stack_size: int = 4,
+    frame_skip: int = 4,
 ):
     """Creates and preprocesses an Atari environment."""
     output = gym.make(env_name, frameskip=1, render_mode=render_mode)
-    output = AtariPreprocessing(output)
+    output = AtariPreprocessing(output, frame_skip=frame_skip)
     output = FrameStackObservation(output, stack_size=stack_size)
 
     # Transform in MLX friendly format.

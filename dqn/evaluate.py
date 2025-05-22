@@ -9,9 +9,16 @@ from gymnasium.wrappers import RecordVideo
 from dqn.atari_env import create_env
 from dqn.model import DQN
 from dqn.utils import load_model
+from dqn.actions import select_action
 
 
-def evaluate(model_path: str, env_name: str, eval_steps: int, render: bool = True):
+def evaluate(
+    model_path: str,
+    env_name: str,
+    eval_steps: int,
+    render: bool = True,
+    epsilon: float = 0.05,
+):
     """Evaluate a trained model for a specified number of steps.
 
     Args:
@@ -19,6 +26,7 @@ def evaluate(model_path: str, env_name: str, eval_steps: int, render: bool = Tru
         env_name: Name of the Atari environment
         eval_steps: Number of steps to evaluate for
         render: Whether to render the environment
+        epsilon: Epsilon value for the ε-greedy policy
 
     """
     render_mode = "human" if render else None
@@ -43,10 +51,7 @@ def evaluate(model_path: str, env_name: str, eval_steps: int, render: bool = Tru
     state, _ = env.reset()
 
     for _ in range(eval_steps):
-        # Select action
-        state_batch = mx.expand_dims(state, axis=0)
-        q_values = model(state_batch)
-        action = mx.argmax(q_values, axis=1)[0].item()
+        action = select_action(state, model, epsilon, num_actions)
 
         # Take action
         next_state, reward, terminated, truncated, _ = env.step(action)
@@ -81,6 +86,7 @@ def record_episode_video(
     env_name: str,
     output_video_filepath: Path,
     video_length: int = 60000,
+    epsilon: float = 0.05,
 ):
     """Load a trained model, run one episode, and save a video."""
     # Create environment to infer num_actions
@@ -116,9 +122,7 @@ def record_episode_video(
     episode_reward = 0.0
 
     while not done:
-        state_batch = mx.expand_dims(state, axis=0)
-        q_values = model(state_batch)
-        action = mx.argmax(q_values, axis=1)[0].item()
+        action = select_action(state, model, epsilon, num_actions)
 
         next_state, reward, terminated, truncated, _ = env.step(action)
         done = terminated or truncated

@@ -40,17 +40,11 @@ def main():
         default=50_000,
         help="Number of steps per epoch during training",
     )
-    parser.add_argument(
-        "--frameskip",
-        type=int,
-        default=4,
-        help="Number of frames to skip",
-    )
     parser.add_argument("--render", action="store_true", help="Render environment")
     parser.add_argument(
         "--eval-steps",
         type=int,
-        default=10_000,
+        default=18_000,
         help="Number of steps to evaluate for",
     )
     parser.add_argument(
@@ -71,6 +65,12 @@ def main():
         default=None,
         help="Path to metrics file for plotting",
     )
+    parser.add_argument(
+        "--frame-skip",
+        type=int,
+        default=4,
+        help="Number of frames to skip between actions",
+    )
 
     args = parser.parse_args()
 
@@ -80,7 +80,7 @@ def main():
             save_path=Path(args.save_path),
             train_steps=args.train_steps,
             steps_per_epoch=args.steps_per_epoch,
-            frameskip=args.frameskip,
+            frame_skip=args.frame_skip,
         )
 
     elif args.mode == "eval":
