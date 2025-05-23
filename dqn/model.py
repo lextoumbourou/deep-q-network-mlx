@@ -1,5 +1,6 @@
 """Defines the DQN model architecture."""
 
+import mlx.core as mx
 import mlx.nn as nn
 
 
@@ -26,6 +27,9 @@ class DQN(nn.Module):
 
     def __call__(self, x):
         """Forward pass through the network."""
+        if x.dtype == mx.int8:
+            x = x.astype(mx.float32) / 255.0
+
         x = nn.relu(self.conv1(x))  # (batch, 84, 84, 4) → (batch, 20, 20, 16)
         x = nn.relu(self.conv2(x))  # → (batch, 9, 9, 32)
         batch_size = x.shape[0]

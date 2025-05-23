@@ -1,3 +1,5 @@
+"""Module for selecting actions using an ε-greedy policy."""
+
 import mlx.core as mx
 import numpy as np
 

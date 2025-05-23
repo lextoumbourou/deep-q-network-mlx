@@ -2,47 +2,47 @@
 
 from pathlib import Path
 
+import gymnasium as gym
 import mlx.core as mx
+import mlx.nn as nn
 import numpy as np
 from gymnasium.wrappers import RecordVideo
+from pydantic import BaseModel
 
+from dqn.actions import select_action
 from dqn.atari_env import create_env
 from dqn.model import DQN
 from dqn.utils import load_model
-from dqn.actions import select_action
+
+
+class EvaluationMetrics(BaseModel):
+    """Metrics for evaluating a trained model."""
+
+    episode_rewards: list[float]
+    avg_episode_reward: float
+    total_reward: float
+    episodes_completed: int
+    avg_max_q: float | None
 
 
 def evaluate(
-    model_path: str,
-    env_name: str,
+    model: nn.Module,
+    env: gym.Env,
     eval_steps: int,
-    render: bool = True,
     epsilon: float = 0.05,
+    eval_states: mx.array | None = None,
 ):
-    """Evaluate a trained model for a specified number of steps.
+    """
+    Evaluate a trained model for a specified number of steps.
 
     Args:
-        model_path: Path to the saved model weights
-        env_name: Name of the Atari environment
+        model: The trained model
+        env: The environment to evaluate in
         eval_steps: Number of steps to evaluate for
-        render: Whether to render the environment
         epsilon: Epsilon value for the ε-greedy policy
+        eval_states: States to evaluate the model on
 
     """
-    render_mode = "human" if render else None
-
-    # Create env to get num_actions
-    temp_env = create_env(env_name, render_mode=None)
-    num_actions = temp_env.action_space.n
-    temp_env.close()
-
-    model = DQN(num_actions)
-    model, env_name, num_actions = load_model(Path(model_path))
-    mx.eval(model.parameters())
-
-    # Create the actual environment for evaluation
-    env = create_env(env_name, render_mode=render_mode)
-
     total_reward = 0
     episode_rewards = []
     current_episode_reward = 0
@@ -51,7 +51,7 @@ def evaluate(
     state, _ = env.reset()
 
     for _ in range(eval_steps):
-        action = select_action(state, model, epsilon, num_actions)
+        action = select_action(state, model, epsilon, env.action_space.n)
 
         # Take action
         next_state, reward, terminated, truncated, _ = env.step(action)
@@ -63,22 +63,27 @@ def evaluate(
         if done:
             episodes_completed += 1
             episode_rewards.append(current_episode_reward)
-            print(f"Episode {episodes_completed}, Reward: {current_episode_reward}")
             current_episode_reward = 0
             state, _ = env.reset()
         else:
             state = next_state
 
-    env.close()
+    avg_episode_reward = np.mean(episode_rewards)
 
-    if episode_rewards:
-        avg_episode_reward = np.mean(episode_rewards)
-        print(f"\nEvaluation Results over {eval_steps} steps:")
-        print(f"Episodes Completed: {episodes_completed}")
-        print(f"Average Episode Reward: {avg_episode_reward:.2f}")
-        print(f"Total Reward: {total_reward:.2f}")
+    avg_max_q = None
+    if eval_states is not None:
+        q_values = model(eval_states)
+        max_q = mx.max(q_values, axis=1)
+        avg_max_q = mx.mean(max_q).item()  # type: ignore
+        mx.eval(avg_max_q)
 
-    return episode_rewards
+    return EvaluationMetrics(
+        episode_rewards=episode_rewards,
+        avg_episode_reward=avg_episode_reward,
+        total_reward=total_reward,
+        episodes_completed=episodes_completed,
+        avg_max_q=avg_max_q,
+    )
 
 
 def record_episode_video(

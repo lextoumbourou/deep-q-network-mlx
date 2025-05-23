@@ -17,7 +17,7 @@ def create_env(
     render_mode: str | None = None,
     stack_size: int = 4,
     frame_skip: int = 4,
-):
+) -> gym.Env:
     """Creates and preprocesses an Atari environment."""
     output = gym.make(env_name, frameskip=1, render_mode=render_mode)
     output = AtariPreprocessing(output, frame_skip=frame_skip)
@@ -26,7 +26,7 @@ def create_env(
     # Transform in MLX friendly format.
     output = TransformObservation(
         env=output,
-        func=lambda obs: mx.array(obs.transpose(1, 2, 0) / 255.0, dtype=mx.float32),
+        func=lambda obs: mx.array(obs.transpose(1, 2, 0), dtype=mx.int8),
         observation_space=output.observation_space,
     )
     return output

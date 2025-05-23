@@ -10,9 +10,11 @@ by Mnih et al.
 import argparse
 from pathlib import Path
 
+from dqn.atari_env import create_env
 from dqn.evaluate import evaluate, record_episode_video
 from dqn.plotting import load_metrics, plot_training_results
 from dqn.train import train_agent
+from dqn.utils import load_model
 
 
 def main():
@@ -88,12 +90,21 @@ def main():
             print("Must provide model path for evaluation")
             return
 
-        evaluate(
-            model_path=args.load_path,
-            env_name=args.env,
+        # Create env to get num_actions
+        env = create_env(args.env, render_mode=None)
+        model, _, _ = load_model(Path(args.load_path))
+
+        results = evaluate(
+            model=model,
+            env=env,
             eval_steps=args.eval_steps,
-            render=args.render,
         )
+
+        env.close()
+
+        print(f"\nEvaluation Results over {results.episodes_completed} episodes:")
+        print(f"Average Episode Reward: {results.avg_episode_reward:.2f}")
+        print(f"Total Reward: {results.total_reward:.2f}")
 
     elif args.mode == "make_video":
         if not args.load_path:

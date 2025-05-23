@@ -2,14 +2,16 @@
 
 from pathlib import Path
 
+import gymnasium as gym
 import mlx.core as mx
 import mlx.nn as nn
 import mlx.optimizers as optim
 import numpy as np
 from tqdm import tqdm
 
-from dqn.atari_env import create_env
 from dqn.actions import select_action
+from dqn.atari_env import create_env
+from dqn.evaluate import evaluate
 from dqn.model import DQN
 from dqn.plotting import plot_training_results, save_metrics
 from dqn.replay_buffer import Experience, ReplayBuffer
@@ -27,6 +29,21 @@ def loss_fn(model, states, actions, targets):
     return nn.losses.huber_loss(q_action, targets, reduction="mean")
 
 
+def get_fixed_states(env: gym.Env, num_eval_steps: int) -> mx.array:
+    """Get a fixed set of states using a random policy."""
+    # Collect a fixed set of states using a random policy before training
+    eval_states_l = []
+    state, _ = env.reset()
+    for _ in range(num_eval_steps):
+        _action = np.random.randint(0, env.action_space.n)
+        next_state, _, terminated, truncated, _ = env.step(_action)
+        eval_states_l.append(state)
+        state = next_state
+        if terminated or truncated:
+            state, _ = env.reset()
+    return mx.stack(eval_states_l)
+
+
 def train_agent(
     env_name: str,
     save_path: Path,
@@ -42,6 +59,7 @@ def train_agent(
     learning_rate: float = 0.00025,
     target_update_freq: int = 10000,
     learning_delay_frames: int = 50_000,
+    num_eval_steps: int = 18_000,
 ):
     """
     Train a DQN agent on an Atari environment.
@@ -53,7 +71,9 @@ def train_agent(
         steps_per_epoch: Interval (frames) at which to snapshot metrics / weights.
         frame_skip: Execute the chosen action for this many frames (\u2265 1).
         gamma:      Discount factor.
-        epsilon_*:  ε‑greedy exploration schedule parameters.
+        epsilon_start:  ε‑greedy exploration schedule parameters.
+        epsilon_min:  ε‑greedy exploration schedule parameters.
+        epsilon_decay_steps:  ε‑greedy exploration schedule parameters.
         batch_size: SGD minibatch size.
         replay_buffer_size: Maximum transitions stored in replay memory.
         learning_delay_frames: Number of frames before training starts
@@ -61,6 +81,8 @@ def train_agent(
         target_update_freq: How often (frames) to copy online weights to the
                             target network.
         learning_delay_frames: Number of frames before training starts
+        num_eval_steps: Number of steps to collect states for evaluation
+
     """
     env = create_env(env_name, frame_skip=frame_skip)
 
@@ -85,18 +107,7 @@ def train_agent(
     current_episode = 0
     updates_performed = 0
 
-    # Collect a fixed set of states using a random policy before training
-    num_eval_steps = 18_000
-    eval_states_l = []
-    state, _ = env.reset()
-    for _ in range(num_eval_steps):
-        _action = np.random.randint(0, num_actions)
-        next_state, _, terminated, truncated, _ = env.step(_action)
-        eval_states_l.append(state)
-        state = next_state
-        if terminated or truncated:
-            state, _ = env.reset()
-    eval_states = mx.stack(eval_states_l)
+    eval_states = get_fixed_states(env, num_eval_steps)
 
     loss_and_grad_fn = nn.value_and_grad(model, loss_fn)
 
@@ -107,9 +118,13 @@ def train_agent(
     epoch = 0
     avg_max_q = 0.0
     avg_reward = 0.0
+    val_avg_reward = 0.0
+    val_avg_max_q = 0.0
 
-    epoch_avg_rewards = []
-    epoch_avg_max_qs = []
+    train_avg_rewards = []
+    train_avg_max_qs = []
+    val_avg_rewards = []
+    val_avg_max_qs = []
 
     pbar = tqdm(total=train_steps, desc="Training")
     last_frame_count = 0
@@ -177,8 +192,19 @@ def train_agent(
             episode_reward = 0
 
         if frame_count % steps_per_epoch == 0:
-            epoch_avg_rewards.append(avg_reward)
-            epoch_avg_max_qs.append(avg_max_q)
+            train_avg_rewards.append(avg_reward)
+            train_avg_max_qs.append(avg_max_q)
+            val_metrics = evaluate(
+                model=model,
+                env=env,
+                eval_states=eval_states,
+                eval_steps=num_eval_steps,
+            )
+            val_avg_reward = val_metrics.avg_episode_reward
+            val_avg_max_q = val_metrics.avg_max_q
+            val_avg_rewards.append(val_avg_reward)
+            val_avg_max_qs.append(val_avg_max_q)
+
             if save_path:
                 save_model(
                     model,
@@ -187,8 +213,8 @@ def train_agent(
                     num_actions=num_actions,
                 )
                 save_metrics(
-                    epoch_avg_rewards,
-                    epoch_avg_max_qs,
+                    val_avg_rewards,
+                    val_avg_max_qs,
                     save_path / env_name,
                     env_name,
                 )
@@ -199,9 +225,11 @@ def train_agent(
         if frame_count % 1000 == 0:
             pbar.set_postfix(
                 {
-                    "Avg Reward": f"{avg_reward:.2f}",
+                    "Train Avg Reward": f"{avg_reward:.2f}",
+                    "Train Avg Max Q": f"{avg_max_q:.2f}",
+                    "Eval Avg Reward": f"{val_avg_reward:.2f}",
+                    "Eval Avg Max Q": f"{val_avg_max_q:.2f}",
                     "Epsilon": f"{epsilon:.3f}",
-                    "Avg Max Q": f"{avg_max_q:.2f}",
                     "Epoch": f"{epoch:,}",
                     "Episode": f"{current_episode:,}",
                 }
@@ -214,8 +242,8 @@ def train_agent(
 
     if save_path:
         plot_training_results(
-            epoch_avg_rewards,
-            epoch_avg_max_qs,
+            val_avg_rewards,
+            val_avg_max_qs,
             save_path / env_name,
             env_name,
         )
