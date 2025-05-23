@@ -55,7 +55,7 @@ def train_agent(
     epsilon_min: float = 0.1,
     epsilon_decay_steps: int = 1_000_000,
     batch_size: int = 32,
-    replay_buffer_size: int = 1_000_000,
+    replay_buffer_size: int = 200_000,
     learning_rate: float = 0.00025,
     target_update_freq: int = 10000,
     learning_delay_frames: int = 50_000,
