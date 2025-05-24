@@ -97,13 +97,3 @@ uv run ruff check . --fix
 ```
 
 You can also configure your editor to use ruff for linting and formatting on save.
-
-## Type Checking
-
-This project uses [mypy](https://mypy-lang.org/) for static type checking.
-
-To run mypy:
-
-```bash
-uv run mypy .
-```
