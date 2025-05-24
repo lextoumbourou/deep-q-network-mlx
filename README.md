@@ -53,6 +53,10 @@ From watching the game play video, I'm pretty convinced that a bigger replay buf
 
 #### Gameplay Video
 
+
+https://github.com/user-attachments/assets/e7a86e3b-b1e0-4dfb-b050-1a79759c416d
+
+
 ### Enduro
 
 #### Commands
@@ -77,6 +81,11 @@ uv run main.py --mode eval --load-path weights/EnduroNoFrameskip-v4/epoch_200.sa
 </p>
 
 #### Gameplay Video
+
+
+
+https://github.com/user-attachments/assets/9ecec561-6301-4ed6-8b7f-887ceafb478d
+
 
 
 ## Linting and Formatting
